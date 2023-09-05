@@ -8,7 +8,7 @@ steps:
   image: plugins/docker
   settings:
     registry: ghcr.io
-    repo: roarkgit/marcel-toing
+    repo: ghcr.io/roarkgit/marcel-toing
     username: roarkgit
     password:
       from_secret: github_pat
