@@ -4,7 +4,7 @@
   "description": "Bot for performing fun functions in Dorknerds Worldwide.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && node -r copyfiles src/data/*.json prod/data",
+    "build": "tsc",
     "start:dev": "nodemon -r dotenv/config ./src/index.ts dotenv_config_path=.env.dev",
     "start:prod": "node -r dotenv/config ./prod/index.js dotenv_config_path=.env.prod"
   },
