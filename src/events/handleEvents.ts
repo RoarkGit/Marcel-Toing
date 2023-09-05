@@ -1,4 +1,7 @@
+import { Message } from 'discord.js'
+
 import { interactionCreate } from './interactionCreate'
+import { messageCreate } from './messageCreate'
 import { ready } from './ready'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
@@ -15,6 +18,11 @@ export const handleEvents = (bot: MarcelToing): void => {
   // Runs on any interaction creation, e.g. a command being run.
   bot.on('interactionCreate', (interaction) => {
     interactionCreate(interaction, bot).catch((err) => console.error(err))
+  })
+
+  // Runs on message being sent.
+  bot.on('messageCreate', (message) => {
+    messageCreate(message, bot)
   })
 
   process.on('uncaughtException', (error) => {
