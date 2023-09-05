@@ -4,7 +4,7 @@ type: docker
 name: default
 
 steps:
-- name: build
+- name: build-branch
   image: plugins/docker
   settings:
     registry: ghcr.io
@@ -12,3 +12,23 @@ steps:
     username: roarkgit
     password:
       from_secret: github_pat
+    tags:
+    - ${DRONE_BRANCH}-${DRONE_COMMIT}
+  when:
+    branch:
+      exclude:
+        - main
+- name: build-main
+  image: plugins/docker
+  settings:
+    registry: ghcr.io
+    repo: ghcr.io/roarkgit/marcel-toing
+    username: roarkgit
+    password:
+      from_secret: github_pat
+    tags:
+    - latest
+    - main
+  when:
+    branch:
+      - main
