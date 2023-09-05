@@ -37,8 +37,9 @@ The following values are required:
 |`CLIENT_ID`           |The bot application ID.                                   |
 |`GREETING_CHANNEL_ID` |The ID of the channel to which a greeting message is sent.|
 |`NODE_ENV`            |The environment in which the bot is running (e.g. `prod`).|
-|`HOME_GUILD_ID`       |The ID of the home guild in which the bot is running.     |
-|`PRUNE_CHANNELS`      |Comma-separated list of channel IDs to prune.             |
+|`GUILD_ID`            |The ID of the home guild in which the bot is running.     |
 
 ## Contributing
 All you need to do is go to https://www.discord.com/developers and create a new application. This will give you the token and client ID, which you can then use to connect the bot to a test server. If you're adding something new, just create a pull request.
+
+The easiest way to test the bot is to just execute `npm run start:dev`. It will then restart itself any time there are code changes.
