@@ -1,4 +1,4 @@
-import type { Client, Collection, Guild } from 'discord.js'
+import type { Client, Collection } from 'discord.js'
 
 import type { Command } from './Command'
 
