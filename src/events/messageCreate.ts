@@ -3,8 +3,8 @@ import { type Message } from 'discord.js'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
 /**
- * Handles slash command interaction.
- * @param interaction the interaction that triggered the event
+ * Handles new message events.
+ * @param message the message that triggered the event
  * @param bot MarcelToing client instance
  */
 export const messageCreate = (message: Message, bot: MarcelToing) => {

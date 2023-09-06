@@ -1,7 +1,6 @@
-import { Message } from 'discord.js'
-
 import { interactionCreate } from './interactionCreate'
 import { messageCreate } from './messageCreate'
+import { messageUpdate } from './messageUpdate'
 import { ready } from './ready'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
@@ -23,6 +22,11 @@ export const handleEvents = (bot: MarcelToing): void => {
   // Runs on message being sent.
   bot.on('messageCreate', (message) => {
     messageCreate(message, bot)
+  })
+
+  // Runs on message being sent.
+  bot.on('messageUpdate', (_, newMessage) => {
+    messageUpdate(newMessage, bot)
   })
 
   process.on('uncaughtException', (error) => {
