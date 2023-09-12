@@ -1,6 +1,6 @@
 import type {
   AutocompleteInteraction,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   SlashCommandBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js'
@@ -20,7 +20,10 @@ export interface Command {
   /**
    * Command action to run.
    */
-  run: (interaction: CommandInteraction, bot: MarcelToing) => Promise<void>
+  run: (
+    interaction: ChatInputCommandInteraction,
+    bot: MarcelToing,
+  ) => Promise<void>
   autocomplete?: (
     bot: MarcelToing,
     prefix: string,
