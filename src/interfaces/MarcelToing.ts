@@ -18,4 +18,8 @@ export interface MarcelToing extends Client {
     id: string
     token: string
   }
+  state: {
+    hellYeahCounter: Collection<string, number>
+    lastHellYeah: Collection<string, number>
+  }
 }

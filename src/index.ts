@@ -1,6 +1,6 @@
 import { join } from 'path'
 
-import { Client, GatewayIntentBits, Partials } from 'discord.js'
+import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js'
 
 import { handleEvents } from './events/handleEvents'
 import type { MarcelToing } from './interfaces/MarcelToing'
@@ -26,6 +26,11 @@ void (async () => {
   if (!validatedEnvironment.valid) {
     console.error(validatedEnvironment.message)
     return
+  }
+
+  bot.state = {
+    hellYeahCounter: new Collection<string, number>(),
+    lastHellYeah: new Collection<string, number>(),
   }
 
   // Load commands.
