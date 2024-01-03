@@ -3,6 +3,7 @@ import { type Message } from 'discord.js'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
 const HELL_YEAH_COOLDOWN_MS = 1000 * 60 * 15 // Fifteen minutes
+const HELL_YEAH_WINDOW_MS = 1000 * 60 * 60 // One hour
 
 /**
  * Handles new message events.
@@ -35,7 +36,7 @@ export const messageCreate = (message: Message, bot: MarcelToing) => {
       if (hellYeahCounter) {
         bot.state.hellYeahCounter.set(channelId, hellYeahCounter - 1)
       }
-    }, HELL_YEAH_COOLDOWN_MS)
+    }, HELL_YEAH_WINDOW_MS)
     if (hellYeahCounter >= 2) {
       message.channel.send('hell yeah')
       bot.state.lastHellYeah.set(channelId, Date.now())
