@@ -40,6 +40,7 @@ export const messageCreate = (message: Message, bot: MarcelToing) => {
     if (hellYeahCounter >= 2) {
       message.channel.send('hell yeah')
       bot.state.lastHellYeah.set(channelId, Date.now())
+      bot.state.hellYeahCounter.set(channelId, 0)
     }
   }
 }
