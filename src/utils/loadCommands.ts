@@ -1,5 +1,5 @@
 import { readdir } from 'fs/promises'
-import { join } from 'path'
+import { join, parse } from 'path'
 
 import { Collection } from 'discord.js'
 
@@ -22,7 +22,7 @@ export const loadCommands = async (
     const files = await readdir(commandsPath)
 
     for (const file of files) {
-      const name = file.split('.')[0]
+      const name = parse(file).name
       const module = await import(join(commandsPath, file))
       commands.set(name, module[name])
     }

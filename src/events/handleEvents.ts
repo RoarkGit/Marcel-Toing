@@ -10,7 +10,7 @@ import type { MarcelToing } from '../interfaces/MarcelToing'
  */
 export const handleEvents = (bot: MarcelToing): void => {
   // Runs when the bot is connected to Discord.
-  bot.on('ready', () => {
+  bot.on('clientReady', () => {
     ready(bot).catch((err) => console.error(err))
   })
 
@@ -26,7 +26,7 @@ export const handleEvents = (bot: MarcelToing): void => {
 
   // Runs on message being sent.
   bot.on('messageUpdate', (_, newMessage) => {
-    messageUpdate(newMessage, bot)
+    messageUpdate(newMessage, bot).catch((err) => console.error(err))
   })
 
   process.on('uncaughtException', (error) => {

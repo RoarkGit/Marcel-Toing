@@ -22,7 +22,7 @@ void (async () => {
   }) as MarcelToing
 
   // Validate and load environment variables.
-  const validatedEnvironment = await validateEnv(bot)
+  const validatedEnvironment = validateEnv(bot)
   if (!validatedEnvironment.valid) {
     console.error(validatedEnvironment.message)
     return

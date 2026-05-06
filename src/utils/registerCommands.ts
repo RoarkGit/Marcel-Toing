@@ -1,9 +1,5 @@
 import { REST } from '@discordjs/rest'
-import {
-  type RESTPostAPIApplicationCommandsJSONBody,
-  type RESTPostAPIChatInputApplicationCommandsJSONBody,
-  Routes,
-} from 'discord.js'
+import { Routes } from 'discord.js'
 
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
@@ -16,21 +12,11 @@ export const registerCommands = async (bot: MarcelToing): Promise<boolean> => {
   try {
     const rest = new REST({ version: '10' }).setToken(bot.config.token)
 
-    const commandData: Array<
-      | RESTPostAPIApplicationCommandsJSONBody
-      | RESTPostAPIChatInputApplicationCommandsJSONBody
-    > = []
-
-    bot.commands.forEach((command) => {
-      const data = command.data.toJSON()
-      commandData.push(data)
-    })
-
     console.info('Registering commands.')
     await rest.put(
       Routes.applicationGuildCommands(bot.config.id, bot.config.guildId),
       {
-        body: commandData,
+        body: bot.commands.map((command) => command.data.toJSON()),
       },
     )
 

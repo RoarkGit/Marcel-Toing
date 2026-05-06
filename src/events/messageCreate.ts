@@ -38,7 +38,8 @@ export const messageCreate = (message: Message, bot: MarcelToing) => {
       }
     }, HELL_YEAH_WINDOW_MS)
     if (hellYeahCounter >= 2) {
-      message.channel.send('hell yeah')
+      message.channel.isSendable() &&
+        message.channel.send('hell yeah').catch((err) => console.error(err))
       bot.state.lastHellYeah.set(channelId, Date.now())
       bot.state.hellYeahCounter.set(channelId, 0)
     }

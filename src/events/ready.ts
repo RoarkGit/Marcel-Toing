@@ -7,9 +7,9 @@ import type { MarcelToing } from '../interfaces/MarcelToing'
 export const ready = async (bot: MarcelToing) => {
   console.log('Discord ready!')
   const greetingChannel = await bot.channels.fetch(bot.config.greetingChannelId)
-  if (greetingChannel === null || !greetingChannel.isTextBased()) {
+  if (greetingChannel === null || !greetingChannel.isSendable()) {
     console.error('Could not find greeting channel.')
     return
   }
-  greetingChannel.send('Meet Marcel Toing!')
+  greetingChannel.send('Meet Marcel Toing!').catch((err) => console.error(err))
 }

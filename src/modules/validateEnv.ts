@@ -5,9 +5,9 @@ import type { MarcelToing } from '../interfaces/MarcelToing'
  * @param bot MarcelToing client instance
  * @returns Whether or not the environment variables were valid.
  */
-export const validateEnv = async (
+export const validateEnv = (
   bot: MarcelToing,
-): Promise<{ valid: boolean; message: string }> => {
+): { valid: true } | { valid: false; message: string } => {
   if (process.env.BOT_TOKEN === undefined) {
     return { valid: false, message: 'Missing bot token.' }
   }
@@ -36,5 +36,5 @@ export const validateEnv = async (
     token: process.env.BOT_TOKEN,
   }
 
-  return { valid: true, message: 'Environment validated.' }
+  return { valid: true }
 }

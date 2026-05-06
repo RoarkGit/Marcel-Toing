@@ -1,4 +1,4 @@
-import { Message, type PartialMessage } from 'discord.js'
+import { type Message, type PartialMessage } from 'discord.js'
 
 import type { MarcelToing } from '../interfaces/MarcelToing'
 

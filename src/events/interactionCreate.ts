@@ -1,4 +1,4 @@
-import { type Interaction, InteractionType } from 'discord.js'
+import { type Interaction } from 'discord.js'
 
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
@@ -18,13 +18,11 @@ export const interactionCreate = async (
     if (command === undefined) return
 
     command.run(interaction, bot).catch((err) => console.error(err))
-  } else if (
-    interaction.type === InteractionType.ApplicationCommandAutocomplete
-  ) {
+  } else if (interaction.isAutocomplete()) {
     // Handle autocomplete.
     const command = bot.commands.get(interaction.commandName)
 
-    if (command == null || command.autocomplete == null) return
+    if (command === undefined || command.autocomplete === undefined) return
 
     const prefix = interaction.options.getFocused()
     const choices = command.autocomplete(bot, prefix, interaction)
