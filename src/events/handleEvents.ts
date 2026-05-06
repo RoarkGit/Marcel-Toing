@@ -1,6 +1,7 @@
 import { interactionCreate } from './interactionCreate'
 import { messageCreate } from './messageCreate'
 import { messageUpdate } from './messageUpdate'
+import { reactionAdd, reactionRemove } from './reactionAdd'
 import { ready } from './ready'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
@@ -27,6 +28,16 @@ export const handleEvents = (bot: MarcelToing): void => {
   // Runs on message being sent.
   bot.on('messageUpdate', (_, newMessage) => {
     messageUpdate(newMessage, bot)
+  })
+
+  // Runs when a reaction is added to a message.
+  bot.on('messageReactionAdd', (reaction, user) => {
+    reactionAdd(reaction, user, bot)
+  })
+
+  // Runs when a reaction is removed from a message.
+  bot.on('messageReactionRemove', (reaction, user) => {
+    reactionRemove(reaction, user, bot)
   })
 
   process.on('uncaughtException', (error) => {

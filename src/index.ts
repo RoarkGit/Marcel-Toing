@@ -17,8 +17,9 @@ void (async () => {
       GatewayIntentBits.Guilds |
       GatewayIntentBits.GuildMembers |
       GatewayIntentBits.GuildMessages |
+      GatewayIntentBits.GuildMessageReactions |
       GatewayIntentBits.MessageContent,
-    partials: [Partials.GuildMember, Partials.Message],
+    partials: [Partials.GuildMember, Partials.Message, Partials.Reaction],
   }) as MarcelToing
 
   // Validate and load environment variables.
