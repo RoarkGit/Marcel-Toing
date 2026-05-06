@@ -26,7 +26,7 @@ export const handleEvents = (bot: MarcelToing): void => {
 
   // Runs on message being sent.
   bot.on('messageUpdate', (_, newMessage) => {
-    messageUpdate(newMessage, bot).catch((err) => console.error(err))
+    messageUpdate(newMessage, bot)
   })
 
   process.on('uncaughtException', (error) => {
