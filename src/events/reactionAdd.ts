@@ -1,7 +1,14 @@
-import { type MessageReaction, type PartialMessageReaction, type PartialUser, type User } from 'discord.js'
+import {
+  type MessageReaction,
+  type PartialMessageReaction,
+  type PartialUser,
+  type User,
+} from 'discord.js'
 
-import { hellYeahReaction } from '../handlers/hellYeahReaction'
-import { hellYeahReactionRemove } from '../handlers/hellYeahReaction'
+import {
+  hellYeahReaction,
+  hellYeahReactionRemove,
+} from '../handlers/hellYeahReaction'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
 export const reactionAdd = (

@@ -1,4 +1,9 @@
-import { type MessageReaction, type PartialMessageReaction, type PartialUser, type User } from 'discord.js'
+import {
+  type MessageReaction,
+  type PartialMessageReaction,
+  type PartialUser,
+  type User,
+} from 'discord.js'
 
 import type { MarcelToing } from '../interfaces/MarcelToing'
 

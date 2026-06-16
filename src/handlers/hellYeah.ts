@@ -21,8 +21,9 @@ export const hellYeah = (message: Message, bot: MarcelToing) => {
   }, WINDOW_MS)
 
   if (count >= 2) {
-    message.channel.isSendable() &&
+    if (message.channel.isSendable()) {
       message.channel.send('hell yeah').catch((err) => console.error(err))
+    }
     bot.state.lastHellYeah.set(channelId, Date.now())
     bot.state.hellYeahCounter.set(channelId, 0)
   }

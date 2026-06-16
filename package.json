@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "lint": "eslint src/",
     "start:dev": "nodemon -r dotenv/config ./src/index.ts dotenv_config_path=.env.dev",
     "start:prod": "node -r dotenv/config ./prod/index.js dotenv_config_path=.env.prod"
   },

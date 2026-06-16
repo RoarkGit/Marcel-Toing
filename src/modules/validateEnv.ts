@@ -24,6 +24,10 @@ export const validateEnv = (
     return { valid: false, message: 'Missing greeting channel ID.' }
   }
 
+  if (process.env.STREAMING_LOBBY_ID === undefined) {
+    return { valid: false, message: 'Missing streaming lobby channel ID.' }
+  }
+
   if (process.env.NODE_ENV === undefined) {
     return { valid: false, message: 'Missing node environment.' }
   }
@@ -33,6 +37,7 @@ export const validateEnv = (
     greetingChannelId: process.env.GREETING_CHANNEL_ID,
     guildId: process.env.GUILD_ID,
     id: process.env.CLIENT_ID,
+    streamingLobbyId: process.env.STREAMING_LOBBY_ID,
     token: process.env.BOT_TOKEN,
   }
 

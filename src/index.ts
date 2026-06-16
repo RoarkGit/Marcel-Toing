@@ -18,6 +18,7 @@ void (async () => {
       GatewayIntentBits.GuildMembers |
       GatewayIntentBits.GuildMessages |
       GatewayIntentBits.GuildMessageReactions |
+      GatewayIntentBits.GuildVoiceStates |
       GatewayIntentBits.MessageContent,
     partials: [Partials.GuildMember, Partials.Message, Partials.Reaction],
   }) as MarcelToing
@@ -32,6 +33,7 @@ void (async () => {
   bot.state = {
     hellYeahCounter: new Collection<string, number>(),
     lastHellYeah: new Collection<string, number>(),
+    activeStreamChannels: new Map(),
   }
 
   // Load commands.

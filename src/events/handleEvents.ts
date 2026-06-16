@@ -3,6 +3,7 @@ import { messageCreate } from './messageCreate'
 import { messageUpdate } from './messageUpdate'
 import { reactionAdd, reactionRemove } from './reactionAdd'
 import { ready } from './ready'
+import { voiceStateUpdate } from './voiceStateUpdate'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
 /**
@@ -38,6 +39,11 @@ export const handleEvents = (bot: MarcelToing): void => {
   // Runs when a reaction is removed from a message.
   bot.on('messageReactionRemove', (reaction, user) => {
     reactionRemove(reaction, user, bot)
+  })
+
+  // Runs when a member's voice state changes (join/leave/stream start/stop).
+  bot.on('voiceStateUpdate', (oldState, newState) => {
+    voiceStateUpdate(oldState, newState, bot).catch((err) => console.error(err))
   })
 
   process.on('uncaughtException', (error) => {

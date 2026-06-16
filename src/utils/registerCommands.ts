@@ -16,7 +16,10 @@ export const registerCommands = async (bot: MarcelToing): Promise<boolean> => {
     await rest.put(
       Routes.applicationGuildCommands(bot.config.id, bot.config.guildId),
       {
-        body: bot.commands.map((command) => command.data.toJSON()),
+        body: [
+          ...bot.commands.map((c) => c.data.toJSON()),
+          ...bot.userContextMenuCommands.map((c) => c.data.toJSON()),
+        ],
       },
     )
 
