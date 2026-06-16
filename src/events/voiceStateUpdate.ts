@@ -41,6 +41,7 @@ export const voiceStateUpdate = async (
     bot.state.activeStreamChannels.set(streamChannel.id, {
       creatorId: member.id,
       open: false,
+      allowedSpeakers: new Map(),
     })
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -84,7 +85,10 @@ export const voiceStateUpdate = async (
       member.id !== channelData.creatorId &&
       !channelData.open
     ) {
-      await member.voice.setMute(true)
+      const expiry = channelData.allowedSpeakers.get(member.id)
+      if (!expiry || Date.now() > expiry) {
+        await member.voice.setMute(true)
+      }
     }
   }
 
@@ -92,6 +96,11 @@ export const voiceStateUpdate = async (
   if (movedChannels && oldChannelId) {
     const channelData = bot.state.activeStreamChannels.get(oldChannelId)
     if (!channelData) return
+
+    // Start the 1-hour grace window for approved speakers.
+    if (channelData.allowedSpeakers.has(member.id)) {
+      channelData.allowedSpeakers.set(member.id, Date.now() + 60 * 60 * 1000)
+    }
 
     // Clear the server mute so it doesn't follow them to other channels.
     await member.voice.setMute(false).catch(() => undefined)

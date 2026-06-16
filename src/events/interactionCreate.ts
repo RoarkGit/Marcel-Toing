@@ -86,6 +86,7 @@ export const interactionCreate = async (
         return
       }
 
+      channelData.allowedSpeakers.set(targetId, Infinity)
       await target.voice.setMute(false)
       await interaction.update({
         content: `✅ **${target.displayName}** can now speak.`,

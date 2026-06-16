@@ -24,6 +24,7 @@ export const closeChannel = async (
   bot: MarcelToing,
 ): Promise<void> => {
   channelData.open = false
+  channelData.allowedSpeakers.clear()
   await Promise.all([
     ...channel.members
       .filter((m) => m.id !== callerId)

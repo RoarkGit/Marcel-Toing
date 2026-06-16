@@ -1,12 +1,10 @@
 import type { Client, Collection } from 'discord.js'
 
 import type { Command } from './Command'
+import type { StreamChannelData } from './StreamChannelData'
 import type { UserContextMenuCommand } from './UserContextMenuCommand'
 
-export interface StreamChannelData {
-  creatorId: string
-  open: boolean
-}
+export type { StreamChannelData }
 
 /**
  * Implementation of Discord client.
