@@ -39,10 +39,14 @@ export const voiceStateUpdate = async (
     const lobbyChannel = await bot.channels.fetch(streamingLobbyId)
     if (!lobbyChannel?.isVoiceBased()) return
 
+    const lobbyCategory = lobbyChannel.parent
     const category = await newState.guild.channels.create({
       name: `${member.displayName}'s Stream`,
       type: ChannelType.GuildCategory,
     })
+    if (lobbyCategory) {
+      await category.setPosition(lobbyCategory.position + 1)
+    }
 
     const [controlsChannel, streamChannel] = await Promise.all([
       newState.guild.channels.create({
