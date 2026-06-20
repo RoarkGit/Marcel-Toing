@@ -2,6 +2,7 @@ import { join } from 'path'
 
 import { Client, Collection, GatewayIntentBits, Partials } from 'discord.js'
 
+import { connectDb } from './db/connection'
 import { handleEvents } from './events/handleEvents'
 import type { MarcelToing } from './interfaces/MarcelToing'
 import { validateEnv } from './modules/validateEnv'
@@ -30,10 +31,13 @@ void (async () => {
     return
   }
 
+  bot.db = await connectDb(bot.config.mongodbUri)
+
   bot.state = {
     hellYeahCounter: new Collection<string, number>(),
     lastHellYeah: new Collection<string, number>(),
     activeStreamChannels: new Map(),
+    controlsToVoiceChannel: new Map(),
   }
 
   // Load commands.

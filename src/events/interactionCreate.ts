@@ -5,27 +5,51 @@ import {
   GuildMember,
   type Interaction,
   MessageFlags,
+  StringSelectMenuBuilder,
 } from 'discord.js'
 
 import {
   BUTTON_APPROVE_SPEAK_PREFIX,
   BUTTON_CLOSE_CHANNEL,
+  BUTTON_MANAGE_MODS,
   BUTTON_OPEN_CHANNEL,
   BUTTON_REQUEST_SPEAK,
+  SELECT_MANAGE_MODS,
 } from '../constants'
+import { addAllowedSpeaker } from '../db/activeStreams'
+import { getStreamMods, isStreamMod, setStreamMods } from '../db/streamMods'
 import { closeChannel, openChannel } from '../handlers/streamChannel'
-import type { MarcelToing } from '../interfaces/MarcelToing'
+import type { MarcelToing, StreamChannelData } from '../interfaces/MarcelToing'
 
-/**
- * Handles slash command interaction.
- * @param interaction the interaction that triggered the event
- * @param bot MarcelToing client instance
- */
+const resolveStreamChannel = (
+  channelId: string,
+  bot: MarcelToing,
+): { voiceChannelId: string; channelData: StreamChannelData } | undefined => {
+  const direct = bot.state.activeStreamChannels.get(channelId)
+  if (direct) return { voiceChannelId: channelId, channelData: direct }
+
+  const voiceId = bot.state.controlsToVoiceChannel.get(channelId)
+  if (!voiceId) return undefined
+
+  const data = bot.state.activeStreamChannels.get(voiceId)
+  if (!data) return undefined
+
+  return { voiceChannelId: voiceId, channelData: data }
+}
+
+const canControlStream = async (
+  memberId: string,
+  channelData: StreamChannelData,
+  bot: MarcelToing,
+): Promise<boolean> => {
+  if (memberId === channelData.creatorId) return true
+  return isStreamMod(bot.db, channelData.creatorId, memberId)
+}
+
 export const interactionCreate = async (
   interaction: Interaction,
   bot: MarcelToing,
 ) => {
-  // Handle slash command.
   if (interaction.isChatInputCommand()) {
     const command = bot.commands.get(interaction.commandName)
 
@@ -41,11 +65,15 @@ export const interactionCreate = async (
     const member = interaction.member
     if (!(member instanceof GuildMember)) return
 
-    const channelData = bot.state.activeStreamChannels.get(channelId)
-    if (!channelData) return
+    const resolved = resolveStreamChannel(channelId, bot)
+    if (!resolved) return
+    const { voiceChannelId, channelData } = resolved
 
     if (customId === BUTTON_REQUEST_SPEAK) {
-      if (member.voice.channelId !== channelId || !member.voice.serverMute) {
+      if (
+        member.voice.channelId !== voiceChannelId ||
+        !member.voice.serverMute
+      ) {
         await interaction.reply({
           content: "You're not muted in this channel.",
           flags: MessageFlags.Ephemeral,
@@ -65,46 +93,117 @@ export const interactionCreate = async (
         ],
       })
     } else if (customId.startsWith(BUTTON_APPROVE_SPEAK_PREFIX)) {
-      if (member.id !== channelData.creatorId) {
+      if (!(await canControlStream(member.id, channelData, bot))) {
         await interaction.reply({
-          content: 'Only the channel creator can approve speak requests.',
+          content: 'Only the channel creator or a stream mod can approve speak requests.',
           flags: MessageFlags.Ephemeral,
         })
         return
       }
 
       const targetId = customId.slice(BUTTON_APPROVE_SPEAK_PREFIX.length)
-      const channel = await bot.channels.fetch(channelId)
+      const channel = await bot.channels.fetch(voiceChannelId)
       if (!channel?.isVoiceBased()) return
 
       const target = channel.members.get(targetId)
       if (!target) {
         await interaction.update({
-          content: '⚠️ That user is no longer in the channel.',
+          content: 'That user is no longer in the channel.',
           components: [],
         })
         return
       }
 
-      channelData.allowedSpeakers.set(targetId, Infinity)
-      await target.voice.setMute(false)
+      channelData.allowedSpeakers.add(targetId)
+      await Promise.all([
+        target.voice.setMute(false),
+        addAllowedSpeaker(bot.db, voiceChannelId, targetId),
+      ])
       await interaction.update({
-        content: `✅ **${target.displayName}** can now speak.`,
+        content: `**${target.displayName}** can now speak.`,
         components: [],
       })
-    } else if (
-      customId === BUTTON_OPEN_CHANNEL ||
-      customId === BUTTON_CLOSE_CHANNEL
-    ) {
+    } else if (customId === BUTTON_MANAGE_MODS) {
       if (member.id !== channelData.creatorId) {
         await interaction.reply({
-          content: 'Only the channel creator can do that.',
+          content: 'Only the channel creator can manage mods.',
           flags: MessageFlags.Ephemeral,
         })
         return
       }
 
-      const channel = await bot.channels.fetch(channelId)
+      const currentMods = new Set(await getStreamMods(bot.db, member.id))
+
+      const channel = await bot.channels.fetch(voiceChannelId)
+      const inChannel = channel?.isVoiceBased()
+        ? [...channel.members.values()]
+            .filter((m) => !m.user.bot && m.id !== member.id)
+        : []
+      const inChannelIds = new Set(inChannel.map((m) => m.id))
+
+      const guild = interaction.guild
+      if (!guild) return
+
+      const allMembers = await guild.members.fetch()
+      const notInChannel = [...allMembers.values()].filter(
+        (m) => !m.user.bot && m.id !== member.id && !inChannelIds.has(m.id),
+      )
+
+      const options = [
+        ...inChannel.map((m) => ({
+          label: `${m.displayName} (in channel)`,
+          value: m.id,
+          default: currentMods.has(m.id),
+        })),
+        ...notInChannel
+          .sort((a, b) => {
+            const aMod = currentMods.has(a.id) ? 0 : 1
+            const bMod = currentMods.has(b.id) ? 0 : 1
+            if (aMod !== bMod) return aMod - bMod
+            return a.displayName.localeCompare(b.displayName)
+          })
+          .map((m) => ({
+            label: m.displayName,
+            value: m.id,
+            default: currentMods.has(m.id),
+          })),
+      ].slice(0, 25)
+
+      if (options.length === 0) {
+        await interaction.reply({
+          content: 'No eligible users found.',
+          flags: MessageFlags.Ephemeral,
+        })
+        return
+      }
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId(SELECT_MANAGE_MODS)
+        .setPlaceholder('Select your stream mods')
+        .setMinValues(0)
+        .setMaxValues(options.length)
+        .addOptions(options)
+
+      await interaction.reply({
+        content: 'Select your stream mods. Current mods are pre-selected.',
+        components: [
+          new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu),
+        ],
+        flags: MessageFlags.Ephemeral,
+      })
+    } else if (
+      customId === BUTTON_OPEN_CHANNEL ||
+      customId === BUTTON_CLOSE_CHANNEL
+    ) {
+      if (!(await canControlStream(member.id, channelData, bot))) {
+        await interaction.reply({
+          content: 'Only the channel creator or a stream mod can do that.',
+          flags: MessageFlags.Ephemeral,
+        })
+        return
+      }
+
+      const channel = await bot.channels.fetch(voiceChannelId)
       if (!channel?.isVoiceBased()) return
 
       if (customId === BUTTON_OPEN_CHANNEL) {
@@ -114,15 +213,36 @@ export const interactionCreate = async (
           flags: MessageFlags.Ephemeral,
         })
       } else {
-        await closeChannel(channel, channelData, member.id, bot)
+        await closeChannel(channel, channelData, channelData.creatorId, bot)
         await interaction.reply({
-          content: 'Channel closed. Only you can speak.',
+          content: 'Channel closed. Only the creator can speak.',
           flags: MessageFlags.Ephemeral,
         })
       }
     }
+  } else if (interaction.isStringSelectMenu()) {
+    const { customId } = interaction
+    const member = interaction.member
+    if (!(member instanceof GuildMember)) return
+
+    if (customId === SELECT_MANAGE_MODS) {
+      const selectedIds = interaction.values
+      await setStreamMods(bot.db, member.id, selectedIds)
+
+      if (selectedIds.length === 0) {
+        await interaction.update({
+          content: 'All stream mods removed.',
+          components: [],
+        })
+      } else {
+        const mentions = selectedIds.map((id) => `<@${id}>`).join(', ')
+        await interaction.update({
+          content: `Stream mods updated: ${mentions}`,
+          components: [],
+        })
+      }
+    }
   } else if (interaction.isAutocomplete()) {
-    // Handle autocomplete.
     const command = bot.commands.get(interaction.commandName)
 
     if (command === undefined || command.autocomplete === undefined) return

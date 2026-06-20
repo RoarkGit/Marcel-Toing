@@ -28,6 +28,10 @@ export const validateEnv = (
     return { valid: false, message: 'Missing streaming lobby channel ID.' }
   }
 
+  if (process.env.MONGODB_URI === undefined) {
+    return { valid: false, message: 'Missing MongoDB connection URI.' }
+  }
+
   if (process.env.NODE_ENV === undefined) {
     return { valid: false, message: 'Missing node environment.' }
   }
@@ -37,6 +41,7 @@ export const validateEnv = (
     greetingChannelId: process.env.GREETING_CHANNEL_ID,
     guildId: process.env.GUILD_ID,
     id: process.env.CLIENT_ID,
+    mongodbUri: process.env.MONGODB_URI,
     streamingLobbyId: process.env.STREAMING_LOBBY_ID,
     token: process.env.BOT_TOKEN,
   }

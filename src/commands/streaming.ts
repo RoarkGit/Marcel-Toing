@@ -5,6 +5,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js'
 
+import { isStreamMod } from '../db/streamMods'
 import { closeChannel, openChannel } from '../handlers/streamChannel'
 import type { Command } from '../interfaces/Command'
 import type { MarcelToing } from '../interfaces/MarcelToing'
@@ -36,10 +37,21 @@ export const streaming: Command = {
       ? bot.state.activeStreamChannels.get(voiceChannelId)
       : undefined
 
-    if (!channelData || channelData.creatorId !== caller.id) {
+    if (!channelData) {
+      await interaction.reply({
+        content: 'You must be in an active stream channel to use this command.',
+        flags: MessageFlags.Ephemeral,
+      })
+      return
+    }
+
+    const isCreator = channelData.creatorId === caller.id
+    const isMod = await isStreamMod(bot.db, channelData.creatorId, caller.id)
+
+    if (!isCreator && !isMod) {
       await interaction.reply({
         content:
-          'You must be the creator of an active stream channel to use this command.',
+          'Only the channel creator or a stream mod can use this command.',
         flags: MessageFlags.Ephemeral,
       })
       return
@@ -57,9 +69,9 @@ export const streaming: Command = {
         flags: MessageFlags.Ephemeral,
       })
     } else if (sub === 'close') {
-      await closeChannel(channel, channelData, caller.id, bot)
+      await closeChannel(channel, channelData, channelData.creatorId, bot)
       await interaction.reply({
-        content: 'Channel closed. Only you can speak.',
+        content: 'Channel closed. Only the creator can speak.',
         flags: MessageFlags.Ephemeral,
       })
     }

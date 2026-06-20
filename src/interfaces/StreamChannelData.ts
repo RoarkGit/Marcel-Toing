@@ -1,5 +1,7 @@
 export interface StreamChannelData {
   creatorId: string
   open: boolean
-  allowedSpeakers: Map<string, number>
+  allowedSpeakers: Set<string>
+  categoryId: string
+  controlsChannelId: string
 }

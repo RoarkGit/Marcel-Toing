@@ -1,6 +1,7 @@
 import type { VoiceBasedChannel } from 'discord.js'
 
 import { CHANNEL_STATUS_MUTED, CHANNEL_STATUS_OPEN } from '../constants'
+import { updateStreamOpenState } from '../db/activeStreams'
 import type { MarcelToing, StreamChannelData } from '../interfaces/MarcelToing'
 
 export const openChannel = async (
@@ -14,6 +15,7 @@ export const openChannel = async (
     bot.rest.put(`/channels/${channel.id}/voice-status` as `/${string}`, {
       body: { status: CHANNEL_STATUS_OPEN },
     }),
+    updateStreamOpenState(bot.db, channel.id, true, []),
   ])
 }
 
@@ -25,12 +27,13 @@ export const closeChannel = async (
 ): Promise<void> => {
   channelData.open = false
   channelData.allowedSpeakers.clear()
+  const membersToMute = channel.members.filter((m) => m.id !== callerId)
+  const mutedIds = membersToMute.map((m) => m.id)
   await Promise.all([
-    ...channel.members
-      .filter((m) => m.id !== callerId)
-      .map((m) => m.voice.setMute(true)),
+    ...membersToMute.map((m) => m.voice.setMute(true)),
     bot.rest.put(`/channels/${channel.id}/voice-status` as `/${string}`, {
       body: { status: CHANNEL_STATUS_MUTED },
     }),
+    updateStreamOpenState(bot.db, channel.id, false, mutedIds),
   ])
 }

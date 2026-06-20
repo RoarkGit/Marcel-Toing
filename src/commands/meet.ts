@@ -2,9 +2,6 @@ import { type ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.j
 
 import type { Command } from '../interfaces/Command'
 
-/**
- * Allows people to meet Marcel Toing.
- */
 export const meet: Command = {
   data: new SlashCommandBuilder()
     .setName('meet')

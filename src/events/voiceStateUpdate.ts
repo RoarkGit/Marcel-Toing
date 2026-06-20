@@ -3,15 +3,23 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
+  PermissionFlagsBits,
   type VoiceState,
 } from 'discord.js'
 
 import {
   BUTTON_CLOSE_CHANNEL,
+  BUTTON_MANAGE_MODS,
   BUTTON_OPEN_CHANNEL,
   BUTTON_REQUEST_SPEAK,
   CHANNEL_STATUS_OPEN,
 } from '../constants'
+import {
+  addMutedUser,
+  removeActiveStream,
+  removeMutedUser,
+  saveActiveStream,
+} from '../db/activeStreams'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
 export const voiceStateUpdate = async (
@@ -27,22 +35,50 @@ export const voiceStateUpdate = async (
   const newChannelId = newState.channelId
   const movedChannels = oldChannelId !== newChannelId
 
-  // Someone joined the lobby — spin up their channel and move them in.
   if (newChannelId === streamingLobbyId) {
     const lobbyChannel = await bot.channels.fetch(streamingLobbyId)
     if (!lobbyChannel?.isVoiceBased()) return
 
-    const streamChannel = await newState.guild.channels.create({
+    const category = await newState.guild.channels.create({
       name: `${member.displayName}'s Stream`,
-      type: ChannelType.GuildVoice,
-      parent: lobbyChannel.parentId,
+      type: ChannelType.GuildCategory,
     })
+
+    const [controlsChannel, streamChannel] = await Promise.all([
+      newState.guild.channels.create({
+        name: 'Stream Controls',
+        type: ChannelType.GuildText,
+        parent: category.id,
+        permissionOverwrites: [
+          {
+            id: newState.guild.roles.everyone.id,
+            deny: [PermissionFlagsBits.SendMessages],
+          },
+          {
+            id: bot.user!.id,
+            allow: [PermissionFlagsBits.SendMessages],
+          },
+          {
+            id: member.id,
+            allow: [PermissionFlagsBits.SendMessages],
+          },
+        ],
+      }),
+      newState.guild.channels.create({
+        name: 'Stream',
+        type: ChannelType.GuildVoice,
+        parent: category.id,
+      }),
+    ])
 
     bot.state.activeStreamChannels.set(streamChannel.id, {
       creatorId: member.id,
       open: true,
-      allowedSpeakers: new Map(),
+      allowedSpeakers: new Set(),
+      categoryId: category.id,
+      controlsChannelId: controlsChannel.id,
     })
+    bot.state.controlsToVoiceChannel.set(controlsChannel.id, streamChannel.id)
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
@@ -57,6 +93,10 @@ export const voiceStateUpdate = async (
         .setCustomId(BUTTON_CLOSE_CHANNEL)
         .setLabel('Close')
         .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId(BUTTON_MANAGE_MODS)
+        .setLabel('Manage Mods')
+        .setStyle(ButtonStyle.Secondary),
     )
 
     await Promise.all([
@@ -67,16 +107,24 @@ export const voiceStateUpdate = async (
           body: { status: CHANNEL_STATUS_OPEN },
         },
       ),
-      streamChannel.send({
+      controlsChannel.send({
         content: '🎙️ This channel is open. Everyone can speak.',
         components: [row],
+      }),
+      saveActiveStream(bot.db, {
+        voiceChannelId: streamChannel.id,
+        controlsChannelId: controlsChannel.id,
+        categoryId: category.id,
+        creatorId: member.id,
+        guildId: newState.guild.id,
+        open: true,
+        allowedSpeakerIds: [],
+        mutedUserIds: [],
       }),
     ])
     return
   }
 
-  // Someone joined a tracked stream channel — mute them unless they're the
-  // creator or the channel is open.
   if (movedChannels && newChannelId) {
     const channelData = bot.state.activeStreamChannels.get(newChannelId)
     if (
@@ -84,30 +132,34 @@ export const voiceStateUpdate = async (
       member.id !== channelData.creatorId &&
       !channelData.open
     ) {
-      const expiry = channelData.allowedSpeakers.get(member.id)
-      if (!expiry || Date.now() > expiry) {
+      if (!channelData.allowedSpeakers.has(member.id)) {
         await member.voice.setMute(true)
+        await addMutedUser(bot.db, newChannelId, member.id)
       }
     }
   }
 
-  // Someone left a tracked stream channel.
   if (movedChannels && oldChannelId) {
     const channelData = bot.state.activeStreamChannels.get(oldChannelId)
     if (!channelData) return
 
-    // Start the 1-hour grace window for approved speakers.
-    if (channelData.allowedSpeakers.has(member.id)) {
-      channelData.allowedSpeakers.set(member.id, Date.now() + 60 * 60 * 1000)
-    }
-
-    // Clear the server mute so it doesn't follow them to other channels.
     await member.voice.setMute(false).catch(() => undefined)
+    await removeMutedUser(bot.db, oldChannelId, member.id)
 
     const oldChannel = oldState.channel
     if (oldChannel && oldChannel.members.size === 0) {
+      bot.state.controlsToVoiceChannel.delete(channelData.controlsChannelId)
       bot.state.activeStreamChannels.delete(oldChannelId)
-      await oldChannel.delete()
+      const [ctrlChannel, categoryChannel] = await Promise.all([
+        bot.channels.fetch(channelData.controlsChannelId).catch(() => null),
+        bot.channels.fetch(channelData.categoryId).catch(() => null),
+      ])
+      await Promise.all([
+        oldChannel.delete().catch(() => undefined),
+        ctrlChannel?.delete().catch(() => undefined),
+        removeActiveStream(bot.db, oldChannelId),
+      ])
+      await categoryChannel?.delete().catch(() => undefined)
     }
   }
 }
