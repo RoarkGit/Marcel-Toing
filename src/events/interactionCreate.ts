@@ -116,7 +116,7 @@ export const interactionCreate = async (
       } else {
         await closeChannel(channel, channelData, member.id, bot)
         await interaction.reply({
-          content: 'Channel closed — only you can speak.',
+          content: 'Channel closed. Only you can speak.',
           flags: MessageFlags.Ephemeral,
         })
       }

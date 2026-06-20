@@ -59,7 +59,7 @@ export const streaming: Command = {
     } else if (sub === 'close') {
       await closeChannel(channel, channelData, caller.id, bot)
       await interaction.reply({
-        content: 'Channel closed — only you can speak.',
+        content: 'Channel closed. Only you can speak.',
         flags: MessageFlags.Ephemeral,
       })
     }

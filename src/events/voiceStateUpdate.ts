@@ -10,7 +10,7 @@ import {
   BUTTON_CLOSE_CHANNEL,
   BUTTON_OPEN_CHANNEL,
   BUTTON_REQUEST_SPEAK,
-  CHANNEL_STATUS_MUTED,
+  CHANNEL_STATUS_OPEN,
 } from '../constants'
 import type { MarcelToing } from '../interfaces/MarcelToing'
 
@@ -40,7 +40,7 @@ export const voiceStateUpdate = async (
 
     bot.state.activeStreamChannels.set(streamChannel.id, {
       creatorId: member.id,
-      open: false,
+      open: true,
       allowedSpeakers: new Map(),
     })
 
@@ -64,12 +64,11 @@ export const voiceStateUpdate = async (
       bot.rest.put(
         `/channels/${streamChannel.id}/voice-status` as `/${string}`,
         {
-          body: { status: CHANNEL_STATUS_MUTED },
+          body: { status: CHANNEL_STATUS_OPEN },
         },
       ),
       streamChannel.send({
-        content:
-          '🎙️ Want to speak? Request permission from the channel creator.',
+        content: '🎙️ This channel is open. Everyone can speak.',
         components: [row],
       }),
     ])
