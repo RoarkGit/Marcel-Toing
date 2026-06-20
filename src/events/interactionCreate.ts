@@ -132,7 +132,8 @@ export const interactionCreate = async (
         return
       }
 
-      const currentMods = new Set(await getStreamMods(bot.db, member.id))
+      const currentModIds = await getStreamMods(bot.db, member.id)
+      const currentMods = new Set(currentModIds)
 
       const channel = await bot.channels.fetch(voiceChannelId)
       const inChannel = channel?.isVoiceBased()
@@ -144,10 +145,13 @@ export const interactionCreate = async (
       const guild = interaction.guild
       if (!guild) return
 
-      const allMembers = await guild.members.fetch()
-      const notInChannel = [...allMembers.values()].filter(
-        (m) => !m.user.bot && m.id !== member.id && !inChannelIds.has(m.id),
+      const modsNotInChannel = currentModIds.filter(
+        (id) => !inChannelIds.has(id),
       )
+      const modMembers =
+        modsNotInChannel.length > 0
+          ? await guild.members.fetch({ user: modsNotInChannel })
+          : new Map()
 
       const options = [
         ...inChannel.map((m) => ({
@@ -155,18 +159,15 @@ export const interactionCreate = async (
           value: m.id,
           default: currentMods.has(m.id),
         })),
-        ...notInChannel
-          .sort((a, b) => {
-            const aMod = currentMods.has(a.id) ? 0 : 1
-            const bMod = currentMods.has(b.id) ? 0 : 1
-            if (aMod !== bMod) return aMod - bMod
-            return a.displayName.localeCompare(b.displayName)
-          })
-          .map((m) => ({
-            label: m.displayName,
-            value: m.id,
-            default: currentMods.has(m.id),
-          })),
+        ...modsNotInChannel
+          .map((id) => {
+            const m = modMembers.get(id)
+            return {
+              label: m?.displayName ?? `Unknown (${id})`,
+              value: id,
+              default: true,
+            }
+          }),
       ].slice(0, 25)
 
       if (options.length === 0) {
